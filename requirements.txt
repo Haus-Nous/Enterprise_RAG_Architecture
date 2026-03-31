@@ -1,0 +1,37 @@
+# Core RAG Framework
+langchain
+langchain-core
+langchain-community
+langchain-openai
+langchain-huggingface
+
+# Vector Database
+chromadb
+langchain-chroma
+
+# Hybrid Retrieval & Re-ranking
+rank_bm25
+sentence-transformers
+
+# Document Loaders
+pdfplumber
+python-pptx
+unstructured
+beautifulsoup4
+markdown
+PyYAML
+
+# API Server
+fastapi
+uvicorn
+python-multipart
+pydantic
+
+# Data Processing
+pandas
+numpy>=2.1.0
+python-dotenv
+
+# Optional AI Utilities
+datasets
+tqdm

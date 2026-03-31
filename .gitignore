@@ -1,0 +1,63 @@
+# Confidential Data - DO NOT COMMIT
+data/*
+!data/**/*.gitkeep
+*.pdf
+*.pptx
+*.docx
+
+# Environment and API Keys
+.env
+*.env
+.env.local
+
+# Vector Database
+chroma_db/
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Output files (can be regenerated)
+output/
+output/**/*
+*.xlsx
+*.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
