@@ -40,46 +40,84 @@ The architecture separates concerns into a **User Interaction Loop** (Real-time 
 
 ```mermaid
 graph TD
-    classDef ingestion fill:#f5f5f7,stroke:#9e9e9e,stroke-width:2px;
-    classDef retrieval fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px;
-    classDef generation fill:#efebe9,stroke:#5d4037,stroke-width:2px;
-    classDef evaluation fill:#fff3e0,stroke:#fb8c00,stroke-width:2px;
-    classDef database fill:#e8f5e9,stroke:#43a047,stroke-width:2px;
+    %% Styling Definitions
+    classDef source fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238;
+    classDef ingestion fill:#E1F5FE,stroke:#0288D1,stroke-width:2px,color:#01579B;
+    classDef embedding fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E;
+    classDef storage fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#1B5E20;
+    classDef retrieval fill:#FFF3E0,stroke:#FF9800,stroke-width:2px,color:#E65100;
+    classDef ranking fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px,color:#4A148C;
+    classDef generation fill:#FDE0E0,stroke:#F44336,stroke-width:2px,color:#B71C1C;
+    classDef citation fill:#E0F2F1,stroke:#009688,stroke-width:2px,color:#004D40;
+    classDef frontend fill:#FFFDE7,stroke:#FBC02D,stroke-width:2px,color:#F57F17;
 
-    %% 1. Ingestion Pipeline
-    subgraph Ingestion ["1. Multi-Format Ingestion Loop"]
-        Docs[Raw Documents<br/>PDF, PPTX, MD, Web]:::ingestion --> Loaders(Document Parsers<br/>pdfplumber / python-pptx):::ingestion
-        Loaders --> Splitter{Custom Chunking Router<br/>Slide-Structural vs Semantic}:::ingestion
-        Splitter -->|Semantic Blocks| Embedder[Local Embedding Generator<br/>all-MiniLM-L6-v2]:::ingestion
-        Splitter -->|Lexical Tokens| BM25Index[BM25 Sparse Keyword Index]:::database
-        Embedder --> ChromaDB[(ChromaDB Vector Store)]:::database
+    %% Subgraphs representing each layer
+    subgraph "1. Document Sources"
+        PDFs["PDF Documents (RFPs)"]:::source
+        PPTXs["PPTX Slides (Proposals)"]:::source
+        MDs["Markdown Files"]:::source
+        Web["Web Pages / URLs"]:::source
     end
 
-    %% 2. Retrieval & Re-ranking
-    subgraph RetrievalLoop ["2. Hybrid Retrieval & Re-ranking"]
-        Query[User Query]:::retrieval --> HybridRetriever(LangChain EnsembleRetriever):::retrieval
-        ChromaDB -->|Dense Similarity Retrieval| HybridRetriever
-        BM25Index -->|Sparse Lexical Retrieval| HybridRetriever
-        HybridRetriever -->|Top-2K Raw Chunks| ReRanker(Sentence-Transformers Cross-Encoder):::retrieval
-        ReRanker -->|Top-N Filtered Context| Formatter[Context Formatter]:::retrieval
+    subgraph "2. Ingestion Pipeline"
+        Parser["Document Loader Router<br>(pdfplumber / python-pptx)"]:::ingestion
+        Splitter["Structural & Semantic Splitters<br>(Slide-Boundary vs Paragraphs)"]:::ingestion
     end
 
-    %% 3. Generation Loop
-    subgraph GenerationLoop ["3. Strict Generation Loop"]
-        Formatter --> LLM(Ollama Local LLM<br/>llama3.2 / mistral):::generation
-        PromptYAML[prompts.yaml<br/>System Prompt Controls]:::generation --> LLM
-        LLM --> API[FastAPI Backend Server]:::generation
-        API --> UI[React/Vite Frontend Dashboard]:::generation
+    subgraph "3. Embedding Pipeline"
+        Embedder["Local HuggingFaceEmbeddings<br>(all-MiniLM-L6-v2)"]:::embedding
     end
 
-    %% 4. Evaluation Loop
-    subgraph EvaluationLoop ["4. Offline Evaluation Loop"]
-        ChromaDB -.-> TestGen(RAGAS Testset Generator):::evaluation
-        TestGen --> GoldenSet[Golden QA Dataset]:::evaluation
-        GoldenSet --> Evaluator(RAGAS Evaluator):::evaluation
-        LLM -.->|Generate Answers| Evaluator
-        Evaluator --> Metrics[Metrics: Faithfulness, Relevancy, Precision]:::evaluation
+    subgraph "4. Storage Layer"
+        ChromaDB[("ChromaDB Vector Store<br>(Dense Index)")]:::storage
+        BM25Index[("BM25 Index<br>(Sparse Index)")]:::storage
     end
+
+    subgraph "5. Hybrid Retrieval Layer"
+        Ensemble["EnsembleRetriever<br>(Sparse-Dense Reciprocal Rank Fusion)"]:::retrieval
+    end
+
+    subgraph "6. Cross-Encoder Re-ranking"
+        CrossEncoder["Cross-Encoder Model<br>(ms-marco-MiniLM-L-6-v2)"]:::ranking
+    end
+
+    subgraph "7. LLM Generation Layer"
+        OllamaLLM["Local Ollama Instance<br>(Llama 3.2 3B Model)"]:::generation
+    end
+
+    subgraph "8. Citation Enforcement"
+        PromptGov["YAML-Configured System Prompt<br>(prompts.yaml constraints)"]:::citation
+        PydanticVal["Pydantic Response Model<br>(Evidence Object Validation)"]:::citation
+    end
+
+    subgraph "9. Frontend Layer"
+        ViteUI["React / Vite App Dashboard<br>(Citation Rendering & Upload)"]:::frontend
+    end
+
+    %% Flow Connections
+    PDFs --> Parser
+    PPTXs --> Parser
+    MDs --> Parser
+    Web --> Parser
+
+    Parser --> Splitter
+    
+    Splitter -->|Raw Text Blocks| Embedder
+    Splitter -->|Lexical Tokens| BM25Index
+    
+    Embedder -->|Dense Vectors (384-D)| ChromaDB
+
+    ChromaDB -->|Dense Similarity Candidates| Ensemble
+    BM25Index -->|Sparse Keyword Candidates| Ensemble
+
+    Ensemble -->|Top-30 Candidate Chunks| CrossEncoder
+    
+    CrossEncoder -->|Top-5 Re-ranked Context Chunks| OllamaLLM
+    PromptGov -->|Citation Constraints| OllamaLLM
+    
+    OllamaLLM --> PydanticVal
+    
+    PydanticVal -->|Cited Answer & Evidence Output| ViteUI
 ```
 
 ---
@@ -141,6 +179,71 @@ To ensure prompt updates, new documents, or vector database configuration change
 * **Answer Relevancy:** Measures if the generated response directly addresses the user's question, penalizing redundant or incomplete answers (Target: `> 0.85`).
 * **Context Precision:** Evaluates if the cross-encoder ranks the most relevant chunks at the top of the context window (Target: `> 0.80`).
 * **Context Recall:** Verifies if the retrieval system fetches all necessary information to answer the question, checked against the ground truth.
+
+```mermaid
+graph TD
+    %% Styling Definitions
+    classDef docs fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238;
+    classDef synth fill:#E1F5FE,stroke:#0288D1,stroke-width:2px,color:#01579B;
+    classDef eval fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E;
+    classDef metrics fill:#FFF3E0,stroke:#FF9800,stroke-width:2px,color:#E65100;
+    classDef ci fill:#FDE0E0,stroke:#F44336,stroke-width:2px,color:#B71C1C;
+    classDef pipeline fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#1B5E20;
+
+    subgraph "Phase 1: Raw Document Contexts"
+        VDB[("ChromaDB Ingested Chunks")]:::docs
+    end
+
+    subgraph "Phase 2: Synthetic Dataset Generation"
+        RagasGen["Ragas TestsetGenerator"]:::synth
+        LLMGen["LLM-as-a-Generator<br>(gpt-4o-mini / gpt-4o critic)"]:::synth
+        GoldenSet["Golden QA Dataset<br>(eval_dataset.json)"]:::synth
+    end
+
+    subgraph "Phase 3: Pipeline Answer Generation"
+        RAGEngine["Local Hybrid RAG Pipeline<br>(AskMyDocsAgent)"]:::pipeline
+    end
+
+    subgraph "Phase 4: RAGAS Evaluation Loop"
+        RagasEval["Ragas Evaluator Engine"]:::eval
+        LLMJudge["LLM-as-a-Judge API"]:::eval
+    end
+
+    subgraph "Phase 5: Performance Metrics"
+        Faithfulness["Faithfulness (Hallucination Control)"]:::metrics
+        Relevancy["Answer Relevancy (Query Matching)"]:::metrics
+        Precision["Context Precision (Re-ranker Check)"]:::metrics
+        Recall["Context Recall (Retriever Check)"]:::metrics
+    end
+
+    subgraph "Phase 6: CI/CD Gate"
+        GHAction["GitHub Actions Workflow<br>(evaluate_rag.yml)"]:::ci
+        Threshold["Threshold Validation Gate<br>(Acceptance Check)"]:::ci
+    end
+
+    %% Flow Connections
+    VDB --> RagasGen
+    RagasGen --> LLMGen
+    LLMGen --> GoldenSet
+
+    GoldenSet -->|Questions| RAGEngine
+    RAGEngine -->|Generated Answers & Chunks| RagasEval
+    GoldenSet -->|Ground Truth & Context| RagasEval
+
+    RagasEval --> LLMJudge
+    LLMJudge --> Faithfulness
+    LLMJudge --> Relevancy
+    LLMJudge --> Precision
+    LLMJudge --> Recall
+
+    Faithfulness --> GHAction
+    Relevancy --> GHAction
+    Precision --> GHAction
+    Recall --> GHAction
+
+    GHAction --> Threshold
+    Threshold -->|Pass / Fail status| G["PR Merge Check"]
+```
 
 ### Regression Testing Loop
 The pipeline generates evaluation questions and checks answer quality automatically:
