@@ -27,7 +27,10 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders import UnstructuredMarkdownLoader, WebBaseLoader
 from langchain_community.retrievers import BM25Retriever
-from langchain.retrievers import EnsembleRetriever
+try:
+    from langchain.retrievers import EnsembleRetriever
+except ImportError:
+    from langchain_classic.retrievers import EnsembleRetriever
 
 try:
     from langchain_chroma import Chroma

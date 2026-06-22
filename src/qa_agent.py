@@ -7,7 +7,13 @@ import time
 import yaml
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
-from langchain_community.chat_models import ChatOllama
+try:
+    from langchain_ollama import ChatOllama
+except ImportError:
+    try:
+        from langchain_community.chat_models import ChatOllama
+    except ImportError:
+        from langchain_classic.chat_models import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from rag_engine import RAGEngine
@@ -42,7 +48,7 @@ class AskMyDocsAgent:
         # Note: You must have Ollama installed and running `ollama run llama3.2` or `mistral` locally
         # for this to work. It connects to the default local port 11434 automatically.
         # We override the model string to point to the local instance.
-        self_model = "llama3.2" if model == "gpt-4o-mini" else model
+        self_model = "llama3.2:3b" if model in ["gpt-4o-mini", "llama3.2"] else model
         
         self.llm = ChatOllama(
             model=self_model,

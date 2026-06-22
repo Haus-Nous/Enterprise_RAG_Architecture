@@ -18,6 +18,12 @@ A production-grade, local-first Retrieval-Augmented Generation (RAG) system engi
 
 ---
 
+<p align="center">
+  <img src="docs/assets/screenshots/01_landing_page.png" alt="Enterprise RAG Dashboard" width="800">
+</p>
+
+---
+
 ## 🎯 System Overview
 
 ### The Problem
@@ -120,6 +126,11 @@ graph TD
     PydanticVal -->|Cited Answer & Evidence Output| ViteUI
 ```
 
+<p align="center">
+  <img src="docs/assets/screenshots/08_architecture_v2.png" alt="High-Fidelity RAG Inference Pipeline" width="800">
+</p>
+<p align="center"><i>Figure 8: High-fidelity system architecture diagram showing structural slide-boundary chunking, hybrid ensemble retrieval, and cross-encoder re-ranking.</i></p>
+
 ---
 
 ## ⚡ Key Features
@@ -151,11 +162,29 @@ The intelligence layer processes questions through a structured, multi-stage pip
    * **PDFs** are extracted page-by-page using `pdfplumber`.
    * **PowerPoint Presentations (PPTX)** are parsed to preserve structure. The system identifies high-priority slides (e.g., project timeline, governance, methodology) using slide keywords and flags them in metadata to prioritize their retrieval.
    * **Markdown** and **Web Pages** are split using a semantic-aware recursive character splitter.
+
+   <p align="center">
+     <img src="docs/assets/screenshots/02_upload_workflow.png" alt="Upload Workflow" width="400">
+     <img src="docs/assets/screenshots/03_sync_index.png" alt="Re-indexing Sync" width="400">
+   </p>
+   <p align="center"><i>Figures 2 & 3: Ingestion interface showing drag-and-drop document upload and automatic background re-indexing statistics.</i></p>
+
 2. **Dense & Sparse Indexing:** Chunks are vectorized using a CPU-friendly `all-MiniLM-L6-v2` transformer model (384-dimensional space) and indexed in ChromaDB. Simultaneously, text chunks are indexed in a BM25 sparse keyword database.
 3. **Hybrid Candidates Retrieval:** When a query arrives, the system retrieves the top 30 candidate chunks using a weighted fusion of dense vector and sparse keyword retrievers.
 4. **Cross-Encoder Re-ranking:** The top 30 chunks are run through the `ms-marco-MiniLM-L-6-v2` cross-encoder. Unlike bi-encoders, the cross-encoder processes the query and chunk together to calculate token attention, scoring each chunk for direct relevance. The top 5 chunks are selected.
 5. **Prompt Injection & Generation:** The selected chunks are formatted and injected into the system prompt configuration from `prompts.yaml`. The prompt is sent to a local Ollama instance running `llama3.2`.
 6. **Structured Output:** The FastAPI endpoint formats the response into a Pydantic `ChatResponse` model, returning the answer string along with an array of `Evidence` objects (source file name, chunk text, cross-encoder relevance score, and timestamp) to render in the UI.
+
+   <p align="center">
+     <img src="docs/assets/screenshots/04_query_console.png" alt="Query Input Console" width="400">
+     <img src="docs/assets/screenshots/05_cited_response.png" alt="Cited Markdown Response" width="400">
+   </p>
+   <p align="center"><i>Figures 4 & 5: Entering a user query in the chat console and receiving a factually-grounded, cited response.</i></p>
+
+   <p align="center">
+     <img src="docs/assets/screenshots/06_citations_panel.png" alt="Expanded Citations Accordion" width="800">
+   </p>
+   <p align="center"><i>Figure 6: Expanded source citation panel showing cross-encoder similarity scores and raw retrieved text chunks.</i></p>
 
 ---
 
@@ -244,6 +273,11 @@ graph TD
     GHAction --> Threshold
     Threshold -->|Pass / Fail status| G["PR Merge Check"]
 ```
+
+<p align="center">
+  <img src="docs/assets/screenshots/07_evaluation_logs.png" alt="RAGAS Evaluation Dashboard" width="800">
+</p>
+<p align="center"><i>Figure 7: Offline RAGAS evaluation report showing quantitative scores for faithfulness, answer relevancy, and context precision.</i></p>
 
 ### Regression Testing Loop
 The pipeline generates evaluation questions and checks answer quality automatically:
