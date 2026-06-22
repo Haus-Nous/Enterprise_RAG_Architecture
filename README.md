@@ -53,45 +53,45 @@ graph TD
 
     %% Subgraphs representing each layer
     subgraph "1. Document Sources"
-        PDFs["PDF Documents (RFPs)"]:::source
-        PPTXs["PPTX Slides (Proposals)"]:::source
+        PDFs["PDF Documents - RFPs"]:::source
+        PPTXs["PPTX Slides - Proposals"]:::source
         MDs["Markdown Files"]:::source
         Web["Web Pages / URLs"]:::source
     end
 
     subgraph "2. Ingestion Pipeline"
-        Parser["Document Loader Router<br>(pdfplumber / python-pptx)"]:::ingestion
-        Splitter["Structural & Semantic Splitters<br>(Slide-Boundary vs Paragraphs)"]:::ingestion
+        Parser["Document Loader Router - pdfplumber / python-pptx"]:::ingestion
+        Splitter["Structural & Semantic Splitters - Slide-Boundary vs Paragraphs"]:::ingestion
     end
 
     subgraph "3. Embedding Pipeline"
-        Embedder["Local HuggingFaceEmbeddings<br>(all-MiniLM-L6-v2)"]:::embedding
+        Embedder["Local HuggingFaceEmbeddings - all-MiniLM-L6-v2"]:::embedding
     end
 
     subgraph "4. Storage Layer"
-        ChromaDB[("ChromaDB Vector Store<br>(Dense Index)")]:::storage
-        BM25Index[("BM25 Index<br>(Sparse Index)")]:::storage
+        ChromaDB[("ChromaDB Vector Store - Dense Index")]:::storage
+        BM25Index[("BM25 Index - Sparse Index")]:::storage
     end
 
     subgraph "5. Hybrid Retrieval Layer"
-        Ensemble["EnsembleRetriever<br>(Sparse-Dense Reciprocal Rank Fusion)"]:::retrieval
+        Ensemble["EnsembleRetriever - Sparse-Dense Reciprocal Rank Fusion"]:::retrieval
     end
 
     subgraph "6. Cross-Encoder Re-ranking"
-        CrossEncoder["Cross-Encoder Model<br>(ms-marco-MiniLM-L-6-v2)"]:::ranking
+        CrossEncoder["Cross-Encoder Model - ms-marco-MiniLM-L-6-v2"]:::ranking
     end
 
     subgraph "7. LLM Generation Layer"
-        OllamaLLM["Local Ollama Instance<br>(Llama 3.2 3B Model)"]:::generation
+        OllamaLLM["Local Ollama Instance - Llama 3.2 3B Model"]:::generation
     end
 
     subgraph "8. Citation Enforcement"
-        PromptGov["YAML-Configured System Prompt<br>(prompts.yaml constraints)"]:::citation
-        PydanticVal["Pydantic Response Model<br>(Evidence Object Validation)"]:::citation
+        PromptGov["YAML-Configured System Prompt - prompts.yaml constraints"]:::citation
+        PydanticVal["Pydantic Response Model - Evidence Object Validation"]:::citation
     end
 
     subgraph "9. Frontend Layer"
-        ViteUI["React / Vite App Dashboard<br>(Citation Rendering & Upload)"]:::frontend
+        ViteUI["React / Vite App Dashboard - Citation Rendering & Upload"]:::frontend
     end
 
     %% Flow Connections
@@ -105,7 +105,7 @@ graph TD
     Splitter -->|Raw Text Blocks| Embedder
     Splitter -->|Lexical Tokens| BM25Index
     
-    Embedder -->|Dense Vectors (384-D)| ChromaDB
+    Embedder -->|Dense Vectors - 384-D| ChromaDB
 
     ChromaDB -->|Dense Similarity Candidates| Ensemble
     BM25Index -->|Sparse Keyword Candidates| Ensemble
@@ -196,12 +196,12 @@ graph TD
 
     subgraph "Phase 2: Synthetic Dataset Generation"
         RagasGen["Ragas TestsetGenerator"]:::synth
-        LLMGen["LLM-as-a-Generator<br>(gpt-4o-mini / gpt-4o critic)"]:::synth
-        GoldenSet["Golden QA Dataset<br>(eval_dataset.json)"]:::synth
+        LLMGen["LLM-as-a-Generator - gpt-4o-mini / gpt-4o critic"]:::synth
+        GoldenSet["Golden QA Dataset - eval_dataset.json"]:::synth
     end
 
     subgraph "Phase 3: Pipeline Answer Generation"
-        RAGEngine["Local Hybrid RAG Pipeline<br>(AskMyDocsAgent)"]:::pipeline
+        RAGEngine["Local Hybrid RAG Pipeline - AskMyDocsAgent"]:::pipeline
     end
 
     subgraph "Phase 4: RAGAS Evaluation Loop"
@@ -210,15 +210,15 @@ graph TD
     end
 
     subgraph "Phase 5: Performance Metrics"
-        Faithfulness["Faithfulness (Hallucination Control)"]:::metrics
-        Relevancy["Answer Relevancy (Query Matching)"]:::metrics
-        Precision["Context Precision (Re-ranker Check)"]:::metrics
-        Recall["Context Recall (Retriever Check)"]:::metrics
+        Faithfulness["Faithfulness - Hallucination Control"]:::metrics
+        Relevancy["Answer Relevancy - Query Matching"]:::metrics
+        Precision["Context Precision - Re-ranker Check"]:::metrics
+        Recall["Context Recall - Retriever Check"]:::metrics
     end
 
     subgraph "Phase 6: CI/CD Gate"
-        GHAction["GitHub Actions Workflow<br>(evaluate_rag.yml)"]:::ci
-        Threshold["Threshold Validation Gate<br>(Acceptance Check)"]:::ci
+        GHAction["GitHub Actions Workflow - evaluate_rag.yml"]:::ci
+        Threshold["Threshold Validation Gate - Acceptance Check"]:::ci
     end
 
     %% Flow Connections
